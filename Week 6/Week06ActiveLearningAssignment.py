@@ -1,5 +1,6 @@
 import csv
 
+#Task 1
 hazards_path = "/Users/jasonklein/Downloads/EJSCREEN_BlockGroup_Hazards.csv"
 social_vul_path = "/Users/jasonklein/Downloads/EJScreen_BlockGroup_SocialVulnerability.csv"
 
@@ -52,6 +53,7 @@ with open(output_path, 'w', newline='') as output_file:
 
 print(f"Task 1 Complete! Full Outer Join saved to: {output_path}")
 
+#Task 2
 total_rows = len(full_outer_joined_table)
 id_socvul_index = joined_headers.index('ID_SOCVUL')
 id_haz_index = joined_headers.index('ID_HAZ')
@@ -69,6 +71,7 @@ print(f"\nTask 2 Metrics:")
 print(f"There are {valid_id_socvul_count} valid ID_SOCVUL out of {total_rows} total joined rows")
 print(f"There are {valid_id_haz_count} valid ID_HAZ out of {total_rows} total joined rows")
 
+#Task 3
 hazards_id_set = set(hazards_join_dict.keys())
 inner_join_ids = target_id_set.intersection(hazards_id_set)
 number_of_inner_join_rows = len(inner_join_ids)
@@ -76,6 +79,7 @@ number_of_inner_join_rows = len(inner_join_ids)
 print(f"\nTask 3 Metrics:")
 print(f"There are {number_of_inner_join_rows} inner joined rows of {total_rows} total Block Groups")
 
+#Task 4
 inner_join_table = []
 for row in full_outer_joined_table:
     if row[id_socvul_index] is not None and row[id_haz_index] is not None:
