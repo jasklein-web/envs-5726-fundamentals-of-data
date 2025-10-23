@@ -33,19 +33,17 @@ for row in rows:
     #Checks if features array exists and has at least one item
     #Extracts the ZONE_SUBTY attribute from the first intersecting flood zone
     #If no features found or attribute is empty, sets 'No Data'
-    try:
-        response = requests.get(full_url)
-        data = response.json()
 
-        if 'features' in data and len(data['features']) > 0:
-            hazard_zone = data['features'][0]['attributes']['ZONE_SUBTY']
-            if hazard_zone:
-                row['FEMA_Hazard_Zone'] = hazard_zone
-            else:
-                row['FEMA_Hazard_Zone'] = 'No Data'
+    response = requests.get(full_url)
+    data = response.json()
+
+    if 'features' in data and len(data['features']) > 0:
+        hazard_zone = data['features'][0]['attributes']['ZONE_SUBTY']
+        if hazard_zone:
+            row['FEMA_Hazard_Zone'] = hazard_zone
         else:
             row['FEMA_Hazard_Zone'] = 'No Data'
-    except:
+    else:
         row['FEMA_Hazard_Zone'] = 'No Data'
 
     time.sleep(0.1)
@@ -62,18 +60,15 @@ for row in rows:
 
     #Making the API request and processing the JSON response for driviing directions:
     #Extracting duration (in seconds) from the first route in the response
-    try:
-        response = requests.get(osrm_url)
-        data = response.json()
+    response = requests.get(osrm_url)
+    data = response.json()
 
-        #Accessing the first route and getting the duration in seconds
-        #Assigns No Data when coordinates are invalid (in ocean, no roads), there is no driving route between points
-        #or OSRM couldn't calculate a path
-        if 'routes' in data and len(data['routes']) > 0:
-            row['DriveDuration_Seconds'] = data['routes'][0]['duration']
-        else:
-            row['DriveDuration_Seconds'] = 'No Data'
-    except:
+    #Accessing the first route and getting the duration in seconds
+    #Assigns No Data when coordinates are invalid (in ocean, no roads), there is no driving route between points
+    #or OSRM couldn't calculate a path
+    if 'routes' in data and len(data['routes']) > 0:
+        row['DriveDuration_Seconds'] = data['routes'][0]['duration']
+    else:
         row['DriveDuration_Seconds'] = 'No Data'
 
     time.sleep(0.1)
