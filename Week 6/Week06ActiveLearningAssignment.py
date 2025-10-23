@@ -21,6 +21,9 @@ for row in hazards_data:
 
 joined_headers = socvul_headers + hazards_headers
 
+#Begins the Full Outer Join by Doing a Left Outer Join
+#Checking if social vulnerability rows have matching hazard data and joining rows together
+#If no matching hazard data exists, fill in cells with None
 full_outer_joined_table = []
 for target_row in socvul_data:
     unique_id = target_row[socvul_headers.index('ID_SOCVUL')]
@@ -37,6 +40,9 @@ for target_row in socvul_data:
     unique_id = target_row[socvul_headers.index('ID_SOCVUL')]
     target_id_set.add(unique_id)
 
+#Completes the Full Outer Join
+#Checking if hazard rows have matching social vulnerability data and joining rows together
+#If no matching social vulnerability data exists, fill in cells with None
 for id_haz in hazards_join_dict:
     if id_haz not in target_id_set:
         null_target_row = [None] * len(socvul_headers)
