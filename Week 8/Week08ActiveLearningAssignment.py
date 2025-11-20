@@ -92,6 +92,18 @@ def convert_values_to_numeric(table: List[tuple]) -> List[tuple]:
 final_converted_table = convert_values_to_numeric(binary_survey_table)
 print(final_converted_table[0])
 
+#TASK 4
+
+"""
+After researching keywords like ‘factor_analyzer NaN error’, ‘factor analyzer correlation matrix zero determinant’, and 
+‘factor analysis multicollinearity’, I found that the issue happens because the factor_analyzer library internally computes a 
+correlation matrix. If two columns are perfectly or almost perfectly correlated, the correlation matrix becomes singular. 
+When the library tries to invert that matrix, the inversion produces NaN values. So even though my actual dataset has no NaNs, 
+the correlation matrix created by factor_analyzer does contain NaNs due to multicollinearity.
+
+The solution is to detect and remove highly correlated columns before running factor analysis.
+"""
+
 # TASK 5
 
 import pandas as pd
@@ -118,6 +130,14 @@ print(df_reduced.head())
 
 # Remove zero-variance columns
 df_fixed = df_reduced.loc[:, df_reduced.var() > 0]
+
+"""
+The NaN table represents the correlation matrix after the library tries to invert it, and the NaNs indicate columns that 
+were too correlated to remain in the dataset.
+
+To fix this, I removed the highly correlated columns and also filtered out any zero-variance columns. This produces a 
+DataFrame called `df_fixed` that can successfully be used in factor analysis.
+"""
 
 # TASK 6
 
@@ -154,3 +174,15 @@ variance_df = pd.DataFrame(fa.get_factor_variance(),
 # Export results
 loadings_df.to_csv(r"/Users/jasonklein/Downloads/IOM_Rohingya_WASH_Loadings.csv")
 variance_df.to_csv(r"/Users/jasonklein/Downloads/IOM_Rohingya_WASH_Variance.csv")
+
+"""
+According to Dr. Kumar’s interpretation, factor analysis reveals the underlying dimensions of the WASH dataset, meaning 
+it groups related survey questions into clusters that represent broader WASH themes. This helps us understand which aspects 
+of water, sanitation, and hygiene vary the most across the refugee camps.
+
+A different environmental problem where factor analysis could be useful would be urban environmental justice. For example, 
+if a city collects dozens of environmental and health indicators like PM2.5, traffic density, asthma rates, temperature, and 
+green space, factor analysis could uncover the underlying risk factors such as ‘traffic emissions’, ‘heat exposure’, or 
+‘socioeconomic vulnerability’. This reduces a large number of variables into a few interpretable factors that help guide 
+policy decisions.
+"""
