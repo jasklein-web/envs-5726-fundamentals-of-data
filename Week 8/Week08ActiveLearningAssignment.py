@@ -11,7 +11,7 @@ with open(csv_path, 'r', encoding='utf-8-sig') as csv_file:
     reader = csv.reader(csv_file)
     headers = next(reader)
 
-    # Filter the header list to only the columns whose names start with 'G'
+    # Filter the header list to only the columns whose names start with 'G' since these contain WASH data
     g_columns = [col for col in headers if col.startswith('G')]
     g_indices = [headers.index(col) for col in g_columns]
 
