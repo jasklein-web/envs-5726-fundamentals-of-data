@@ -24,8 +24,6 @@ with open(csv_path, 'r', encoding='utf-8-sig') as csv_file:
     # Put those values into a NamedTuple (SurveyRecord)
     # Append that record to survey_table
     for row in reader:
-        if len(row) < len(headers):
-            row = row + [''] * (len(headers) - len(row))
         g_row_data = [row[idx] for idx in g_indices]
         survey_record = SurveyRecord(*g_row_data)
         survey_table.append(survey_record)
@@ -75,7 +73,7 @@ def convert_values_to_numeric(table: List[tuple]) -> List[tuple]:
             [v for v in column_values if not isinstance(v, (int, float, complex))]
         )
 
-        # Create and apply mapping
+        # Create and apply mapping (Get the index and value for the unique item)
         map_dict = {unique_value: idx for idx, unique_value in enumerate(unique_non_numeric_column_values)}
 
         numeric_column_values = [
