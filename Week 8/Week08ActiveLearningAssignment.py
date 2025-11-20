@@ -123,13 +123,34 @@ df_fixed = df_reduced.loc[:, df_reduced.var() > 0]
 
 from factor_analyzer import FactorAnalyzer
 
-# Initialize and fit a factor analysis model to the cleaned data
-fa = FactorAnalyzer(rotation=None)
+# Create factor analysis object and perform initial factor analysis
+fa = FactorAnalyzer(rotation="varimax")
 fa.fit(df_fixed)
 
-# Extract the factor loadings and variance explained by each factor
-loadings = fa.loadings_
-variance = fa.get_factor_variance()
+# Perform factor analysis with the determined number of factors
+number_of_factors = 5
+fa = FactorAnalyzer(n_factors=number_of_factors, rotation="varimax")
+fa.fit(df_fixed)
 
-print(loadings)
-print(variance)
+# Create factor names
+factor_names = [f'Factor{i+1}' for i in range(number_of_factors)]
+
+# Loadings DataFrame
+loadings_df = pd.DataFrame(fa.loadings_,
+                           columns=factor_names,
+                           index=df_fixed.columns)
+
+# Get variance of each factor
+index_names = [
+    'Sum of Squared Loadings',
+    'Proportional Variance',
+    'Cumulative Variance'
+]
+
+variance_df = pd.DataFrame(fa.get_factor_variance(),
+                           columns=factor_names,
+                           index=index_names)
+
+# Export results
+loadings_df.to_csv(r"/Users/jasonklein/Downloads/IOM_Rohingya_WASH_Loadings.csv")
+variance_df.to_csv(r"/Users/jasonklein/Downloads/IOM_Rohingya_WASH_Variance.csv")
