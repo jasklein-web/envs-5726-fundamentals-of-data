@@ -79,7 +79,6 @@ def convert_yesno_to_binary(table: List[tuple]) -> List[tuple]:
     # Return the complete list of converted namedtuples
     return converted_rows
 
-
 # Apply the binary conversion function to the survey table
 binary_survey_table = convert_yesno_to_binary(survey_table)
 
