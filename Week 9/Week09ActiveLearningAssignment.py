@@ -191,7 +191,7 @@ threshold = 70
 # Filter list for pipes with survival probability below threshold
 low_survival = [v for v in survival_values if v < threshold]
 
-# Calculate percentage of pipes below threshold
+# Calculate percentage of pipes below threshold (at risk); what proportion of the system is at risk?
 percent_low = (len(low_survival) / len(survival_values)) * 100
 
 # Create a histogram of survival probabilities
