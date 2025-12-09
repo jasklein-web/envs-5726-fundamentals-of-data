@@ -112,7 +112,7 @@ import math
 def weibull_survival(age, c, b, a):
     return c * math.exp(-((age / b) ** a)) * 100  # Returns survival probability as a percentage
 
-# Dictionary of fitted Weibull coefficients from Task 1 for each material
+# Dictionary of fitted Weibull coefficients from Task 1 for each material (acts as a material-to-parameter lookup table)
 coefficients = {
     "Cast Iron": (1.0236, 91.2607, 1.6987),
     "Ductile Iron": (1.0434, 66.0815, 1.6726),
@@ -142,7 +142,7 @@ with open(csv_path, newline='', encoding="windows-1252") as csvfile:
         if "ï»¿MainType" in row:
             row["MainType"] = row.pop("ï»¿MainType")
 
-        # Parse the installation date string into a datetime object
+        # Parse the installation date string into a datetime object ("5/29/2015 3:45:00 PM" → datetime.datetime(2015, 5, 29, 15, 45)
         install_date = datetime.strptime(row["InstallDate"], "%m/%d/%Y %H:%M")
         material = row["Material"]
 
@@ -153,7 +153,7 @@ with open(csv_path, newline='', encoding="windows-1252") as csvfile:
         if material in coefficients:
             c, b, a = coefficients[material]
             survival = weibull_survival(age, c, b, a)
-            # Cap survival probability at 100%
+            # Cap survival probability at 100% because can't have >100% chance of survival
             if survival > 100:
                 survival = 100
         else:
