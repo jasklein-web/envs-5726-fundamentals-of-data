@@ -10,7 +10,7 @@ def main(category_name: str):
         port="5432",
         database="week11_assignment",
         user="postgres",
-        password="chubbs1"  # change to your PostgreSQL password
+        password="chubbs1"
     )
     cursor = conn.cursor()
 
