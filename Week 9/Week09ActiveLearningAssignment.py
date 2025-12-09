@@ -1,93 +1,209 @@
+# Import necessary libraries for file paths, typing, CSV handling, date manipulation, numerical operations, plotting, Excel reading, and curve fitting
+from pathlib import Path
+from typing import List, Tuple, Dict
+import csv
+from datetime import datetime
+import numpy as np
+import matplotlib.pyplot as plt
+from openpyxl import load_workbook
+from scipy.optimize import curve_fit
+
 # TASK 1
 
-import pandas as pd
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-import numpy as np
+# Define the path to the Excel file containing pipe material training data
+pipe_material_excel_path = ('/Users/jasonklein/Downloads/Pipe_Material_Training_Data.xlsx')
 
-# Load the training data
-file_path = '/Users/jasonklein/Downloads/Pipe_Material_Training_Data.xlsx'
-table = pd.read_excel(file_path)
+# Load the Excel workbook into memory
+workbook = load_workbook(pipe_material_excel_path)
 
+# Access the specific sheet named "Survival Probabilities"
+sheet = workbook["Survival Probabilities"]
 
-# Define the Weibull CDF function
-def cumulative_density_function(age, c, b, a):
-    return c * (1 - np.exp(-(age / b) ** a))
+# Define the Weibull Cumulative Distribution Function (CDF)
+# This function models the probability of failure by a given age
+def cumulative_density_function(x, c, b, a):
+    # x = age, a = shape parameter (controls curve steepness),
+    # b = scale parameter (controls lifespan length),
+    # c = initial survival multiplier (vertical scaling)
+    return 1 - c * np.exp(-((x / b) ** a))  # Returns failure probability by age x
 
-
-# Define the plot_cdf_curve_fit function
+# Define a function to fit and plot the Weibull CDF for a specific pipe material
 def plot_cdf_curve_fit(table, material_type, line_color):
-    # Filter data by material type
-    material_data = table[table['Material Type'] == material_type]
+    X_train = []  # List to store pipe ages (Life Expectancy)
+    Y_train = []  # List to store failure probabilities (CDF values)
 
-    # Extract X and Y training data
-    xdata = material_data['Life Expectancy (y)'].values
-    ydata = material_data['Surv. Prob. (%)'].values / 100  # Convert to decimal
+    # Iterate through each row in the Excel sheet
+    for row in table.iter_rows(values_only=True):
+        # Unpack row into material, life expectancy, and survival percentage
+        mat, life, surv = row
+        # Skip the header row
+        if mat == "Material Type":
+            continue
 
-    # Provide better initial guesses and bounds
-    if material_type == 'Cast Iron':
-        p0 = [1.0, 75, 2.0]  # c, b, a
-    elif material_type == 'Ductile Iron':
-        p0 = [1.0, 55, 2.0]
-    elif material_type == 'Galvanized Iron':
-        p0 = [1.0, 25, 2.0]
-    elif material_type == 'Copper':
-        p0 = [1.0, 38, 2.0]
-    else:
-        p0 = [1.0, 50, 2.0]
+        # Only process rows matching the specified material type
+        if mat == material_type:
+            # Skip invalid rows where life expectancy is non-positive
+            if float(life) <= 0:
+                continue
 
-    # Set bounds to ensure positive parameters
-    bounds = ([0.1, 1, 0.1], [1.5, 200, 10])  # (lower_bounds), (upper_bounds)
+            # Convert survival percentage to failure probability (CDF)
+            cdf_value = 1 - float(surv) / 100
 
-    # Use curve_fit with bounds
-    try:
-        coefficients, bounds = curve_fit(cumulative_density_function, xdata, ydata, p0=p0, bounds=bounds, maxfev=5000)
-        c, b, a = coefficients
-    except:
-        # If curve fitting fails, use reasonable defaults based on data characteristics
-        mid_point = xdata[1]  # Use the middle data point (50% survival)
-        c, b, a = 1.0, mid_point, 2.0
+            # Add to training lists
+            X_train.append(float(life))
+            Y_train.append(cdf_value)
 
-    # Print the fitted equation
-    print(f'Curve_fitted CDF for {material_type}: Survival Probability = {c:.3f}* e^(-(age/{b:.3f})^{a:.3f})')
+    # Convert lists to NumPy arrays for numerical operations
+    X_train = np.array(X_train)
+    Y_train = np.array(Y_train)
 
-    # Create smooth curve for plotting
-    x_curve = np.linspace(1, 150, 150)
-    y_curve = cumulative_density_function(x_curve, c, b, a) * 100  # Convert back to percentage
+    # Handle case where all Y values are identical (e.g., Copper data)
+    # Add small noise to allow curve fitting
+    if np.all(Y_train == Y_train[0]):
+        Y_train = Y_train + 0.001 * np.arange(len(Y_train))
 
-    # Ensure survival probability doesn't exceed 100%
-    y_curve = np.minimum(y_curve, 100)
+    # Fit the Weibull model to the training data
+    coeffs, _ = curve_fit(
+        cumulative_density_function,  # The model function
+        X_train,  # Age data
+        Y_train,  # Failure probability data
+        p0=[1, 50, 2],  # Initial guess for c, b, a
+        maxfev=20000  # Maximum function evaluations
+    )
 
-    # Plot the fitted curve
-    plt.plot(x_curve, y_curve, color=line_color, label=material_type, linewidth=2)
+    # Unpack fitted coefficients
+    c, b, a = coeffs
+    # Print fitted parameters for debugging/verification
+    print(f"{material_type}: c={c:.4f}, b={b:.4f}, a={a:.4f}")
 
-    # Also plot the original data points
-    plt.scatter(xdata, ydata * 100, color=line_color, s=50, alpha=0.7)
+    # Generate smooth curve for plotting
+    x_vals = np.linspace(1, max(X_train) * 1.2, 300)  # Age range from 1 to slightly beyond max training age
+    y_vals = cumulative_density_function(x_vals, c, b, a)  # Compute failure probabilities
 
-    return (c, b, a)
+    # Convert failure probability back to survival percentage for visualization
+    survival_vals = (1 - y_vals) * 100
 
+    # Plot the survival curve
+    plt.plot(x_vals, survival_vals, color=line_color, label=material_type)
 
-# Create the plot with multiple materials
-plt.figure(figsize=(12, 8))
+# Fit and plot survival curves for each material type
+plot_cdf_curve_fit(sheet, "Cast Iron", "red")
+plot_cdf_curve_fit(sheet, "Ductile Iron", "blue")
+plot_cdf_curve_fit(sheet, "Galvanized Iron", "green")
+plot_cdf_curve_fit(sheet, "Copper", "brown")
 
-# Plot CDF curves for different materials
-coefficients_dict = {}
-coefficients_dict['Cast Iron'] = plot_cdf_curve_fit(table, material_type='Cast Iron', line_color='red')
-coefficients_dict['Ductile Iron'] = plot_cdf_curve_fit(table, material_type='Ductile Iron', line_color='blue')
-coefficients_dict['Galvanized Iron'] = plot_cdf_curve_fit(table, material_type='Galvanized Iron', line_color='green')
-coefficients_dict['Copper'] = plot_cdf_curve_fit(table, material_type='Copper', line_color='brown')
-
-# Add plot formatting
+# Add chart elements
 plt.legend()
-plt.xlabel('Life Expectancy (y)')
-plt.ylabel('Survival Probability (%)')
-plt.title('Pipe Material Survival CDF')
-plt.grid(True, alpha=0.3)
-plt.xlim(0, 160)
-plt.ylim(0, 110)
+plt.xlabel("Life Expectancy (y)")
+plt.ylabel("Survival Probability (%)")
+plt.title("Pipe Material Survival CDF")
+plt.grid(True)
 plt.show()
 
-# Print coefficients for use in Task 2
-print("\nCoefficients for Task 2:")
-for material, coeffs in coefficients_dict.items():
-    print(f"{material}: c={coeffs[0]:.3f}, b={coeffs[1]:.3f}, a={coeffs[2]:.3f}")
+# TASK 2
+# Import additional libraries for data structures and math operations
+from collections import namedtuple
+import math
+
+# Define a function to compute survival probability using Weibull formula
+def weibull_survival(age, c, b, a):
+    return c * math.exp(-((age / b) ** a)) * 100  # Returns survival probability as a percentage
+
+# Dictionary of fitted Weibull coefficients from Task 1 for each material
+coefficients = {
+    "Cast Iron": (1.0236, 91.2607, 1.6987),
+    "Ductile Iron": (1.0434, 66.0815, 1.6726),
+    "Galvanized Iron": (1.2914, 25.9335, 1.4309),
+    "Copper": (1.0903, 44.1999, 1.6471)
+}
+
+# Define a namedtuple to represent a water main record (immutable, readable)
+WaterMain = namedtuple(
+    "WaterMain",
+    ["MainType", "Diameter", "InstallDate", "Material", "Age", "Survival_Probability"]
+)
+
+# List to store all water main records
+water_mains_table = []
+
+# Path to the CSV file containing water main data
+csv_path = '/Users/jasonklein/Downloads/Water_Mains.csv'
+
+# Open and read the CSV file
+with open(csv_path, newline='', encoding="windows-1252") as csvfile:
+    reader = csv.DictReader(csvfile)  # Read rows as dictionaries
+    current_year = 2025  # Reference year for age calculation
+
+    for row in reader:
+        # Fix encoding issue with column name (BOM character)
+        if "ï»¿MainType" in row:
+            row["MainType"] = row.pop("ï»¿MainType")
+
+        # Parse the installation date string into a datetime object
+        install_date = datetime.strptime(row["InstallDate"], "%m/%d/%Y %H:%M")
+        material = row["Material"]
+
+        # Calculate age in years
+        age = current_year - install_date.year
+
+        # Calculate survival probability using material-specific coefficients
+        if material in coefficients:
+            c, b, a = coefficients[material]
+            survival = weibull_survival(age, c, b, a)
+            # Cap survival probability at 100%
+            if survival > 100:
+                survival = 100
+        else:
+            survival = None  # If material not in dictionary, set to None
+
+        # Create a WaterMain namedtuple instance for this pipe
+        wm = WaterMain(
+            MainType=row["MainType"],
+            Diameter=row["Diameter"],
+            InstallDate=install_date,
+            Material=material,
+            Age=age,
+            Survival_Probability=round(survival, 3) if survival is not None else None
+        )
+
+        # Add to the table
+        water_mains_table.append(wm)
+
+# Print first 5 rows to verify data
+for row in water_mains_table[:5]:
+    print(row)
+
+# TASK 3
+
+# Extract survival probabilities from the water mains table (excluding None values)
+survival_values = [
+    row.Survival_Probability
+    for row in water_mains_table
+    if row.Survival_Probability is not None
+]
+
+# Define threshold for "low survival" (below 70% is considered vulnerable)
+threshold = 70
+
+# Filter list for pipes with survival probability below threshold
+low_survival = [v for v in survival_values if v < threshold]
+
+# Calculate percentage of pipes below threshold
+percent_low = (len(low_survival) / len(survival_values)) * 100
+
+# Create a histogram of survival probabilities
+plt.figure(figsize=(8, 5))
+plt.hist(survival_values, bins=15, color='skyblue', edgecolor='black')
+# Add a vertical line at the threshold
+plt.axvline(threshold, color='red', linestyle='--', label=f'{threshold}% threshold')
+
+# Add chart labels and title
+plt.title('Distribution of Pipe Survival Probabilities – Mercator Water')
+plt.xlabel('Survival Probability (%)')
+plt.ylabel('Number of Pipes')
+plt.legend()
+plt.grid(axis='y', alpha=0.3)
+plt.show()
+
+# Print summary statistics
+print(f"Pipes below {threshold}% survival: {len(low_survival)} ({percent_low:.1f}% of total)")
