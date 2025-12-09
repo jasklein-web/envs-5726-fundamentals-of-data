@@ -207,3 +207,12 @@ plt.show()
 
 # Print summary statistics
 print(f"Pipes below {threshold}% survival: {len(low_survival)} ({percent_low:.1f}% of total)")
+
+"""
+Based on the histogram of pipe survival probabilities for Mercator Water, the utility does not appear to be vulnerable to 
+overwhelming pipe failure. The distribution is heavily skewed toward high survival rates, with the majority of
+pipes exhibiting survival probabilities above 70%—many clustering near 80–100%. Only a small fraction of pipes fall below 
+the 70% threshold, indicating that the overall system remains in good condition. This suggests that the risk of widespread
+infrastructure failure is low, and Mercator Water can likely manage necessary repairs or replacements within its current 
+budget without needing to sell to a private utility.
+"""
