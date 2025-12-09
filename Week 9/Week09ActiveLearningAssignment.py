@@ -18,6 +18,12 @@ sheet = workbook["Survival Probabilities"]
 
 # Define the Weibull Cumulative Distribution Function (CDF)
 # This function models the probability of failure by a given age
+"""
+Calculates the failure probability (CDF) at age x given parameters c, b, and a. The training data provides survival percentages, 
+but curve fitting needs failure probabilities, so we convert:
+From data: Survival = 95% → Failure = 5%
+Mathematically: Failure = 1 - Survival
+ """
 def cumulative_density_function(x, c, b, a):
     # x = age, a = shape parameter (controls curve steepness),
     # b = scale parameter (controls lifespan length),
